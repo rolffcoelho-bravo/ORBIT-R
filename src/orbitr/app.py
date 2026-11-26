@@ -30,7 +30,9 @@ class State:
         with self.db() as db:
             if channel:r=db.execute("SELECT * FROM events WHERE channel=? ORDER BY id DESC LIMIT ?",(channel,min(500,max(1,limit)))).fetchall()
             else:r=db.execute("SELECT * FROM events ORDER BY id DESC LIMIT ?",(min(500,max(1,limit)),)).fetchall()
-        return [{**dict(x),"trace":json.loads(x["trace"])} for x in r]
+        # Expert labels and split membership are evaluation-only, never dashboard data.
+        return [{**{k:v for k,v in dict(x).items() if k not in {"label","train"}},
+                 "trace":json.loads(x["trace"])} for x in r]
     def stats(self):
         with self.db() as db:
             n=db.execute("SELECT count(*) FROM events").fetchone()[0]

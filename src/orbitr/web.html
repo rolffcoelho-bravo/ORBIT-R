@@ -1,1 +1,81 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ORBIT-R · Mission Health</title><style>:root{font:14px system-ui;background:#09121e;color:#e3f0f6}body{margin:0}header{padding:22px 5%;background:#112336;border-bottom:1px solid #304456}h1{margin:0;letter-spacing:.09em;font-size:27px}h1 b{color:#76e0ca}small{color:#98abb9}main{max-width:1250px;margin:auto;padding:26px 5%}.notice{background:#133c45;border-left:4px solid #66d5cb;padding:14px;margin-bottom:22px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.box{background:#102235;border:1px solid #2b4655;border-radius:10px;padding:19px}.value{font-size:28px;font-weight:bold;margin:9px 0}.label{font-size:11px;letter-spacing:.05em;color:#aabdc7;text-transform:uppercase}h2{font-size:17px}table{width:100%;border-collapse:collapse}td,th{padding:10px;text-align:left;border-bottom:1px solid #284354;font-size:12px}tr:hover{background:#183747;cursor:pointer}th{color:#aac2cd}.INVESTIGATE{color:#ffac8f}.NORMAL{color:#76dbb8}.ABSTAIN{color:#d8d2b4}svg{width:100%;height:180px;background:#0b1827}select{padding:8px;color:inherit;background:#142c39}footer{padding:25px 5%;color:#8ba1ad}a{color:#7adbd2}</style></head><body><header><h1>ORBIT<b>-R</b></h1><small>ShockBridge Pulse Research Lab · Mission Health Research</small></header><main><div class="notice"><strong>HISTORICAL REPLAY OF GENUINE SPACECRAFT TELEMETRY</strong> · Not a live spacecraft connection. Baseline anomaly signals are not engineering fault diagnoses.</div><div id="error" style="color:#ffb2a0"></div><div class="grid"><div class="box"><div class="label">Segments replayed</div><div class="value" id="n">—</div></div><div class="box"><div class="label">Channels</div><div class="value" id="c">—</div></div><div class="box"><div class="label">Investigate</div><div class="value" id="i">—</div></div><div class="box"><div class="label">Abstain</div><div class="value" id="a">—</div></div></div><section class="box" style="margin-top:18px"><h2>Actual measured telemetry segments</h2><table><thead><tr><th>UTC timestamp</th><th>Channel</th><th>Segment ID</th><th>Assessment</th><th>Score</th><th>Expert annotation</th></tr></thead><tbody id="rows"><tr><td colspan="6">Checking original source telemetry…</td></tr></tbody></table></section><section class="box" style="margin-top:18px"><h2>Selected waveform</h2><small id="selection">Choose a segment above.</small><svg id="plot" viewBox="0 0 900 180" preserveAspectRatio="none"></svg></section><section class="box" style="margin-top:18px"><h2>Data provenance</h2><p><a href="https://doi.org/10.5281/zenodo.12588359">OPS-SAT-AD v1</a></p><small id="hash">Source not loaded</small></section></main><footer>ORBIT-R · Research tool, not flight-qualified.</footer><script>const $=x=>document.getElementById(x);const clean=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));function plot(v){if(!v.length)return;const vals=v.map(x=>x.v),min=Math.min(...vals),max=Math.max(...vals),range=Math.max(1e-8,max-min);const points=vals.map((x,i)=>(10+i*880/Math.max(1,vals.length-1))+","+(165-140*(x-min)/range)).join(" ");$("plot").innerHTML='<polyline points="'+points+'" fill="none" stroke="#71dbc9" stroke-width="2" />'}async function update(){try{const [s,e]=await Promise.all([fetch("/api/status").then(r=>r.json()),fetch("/api/events").then(r=>r.json())]);$("n").textContent=s.processed+" / "+s.total;$("c").textContent=s.stats.channels;$("i").textContent=s.stats.assessments.INVESTIGATE||0;$("a").textContent=s.stats.assessments.ABSTAIN||0;$("hash").textContent="Source SHA-256: "+(s.sha256||"not loaded");$("error").textContent=s.error||"";$("rows").innerHTML=e.items.map((x,i)=>'<tr data-i="'+i+'"><td>'+clean(x.ts)+'</td><td>'+clean(x.channel)+'</td><td>'+clean(x.source_key)+'</td><td class="'+clean(x.status)+'">'+clean(x.status)+'</td><td>'+clean(x.score)+'</td><td>'+clean(x.label)+'</td></tr>').join("");$("rows").querySelectorAll("tr").forEach(r=>r.onclick=()=>{const x=e.items[Number(r.dataset.i)];$("selection").textContent=x.channel+" · "+x.samples+" genuine source measurements · "+x.explanation;plot(x.trace)});}catch(e){$("error").textContent=e.message}}update();setInterval(update,3500)</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ORBIT-R · Telemetry research</title>
+  <style>
+    :root{font:16px system-ui,sans-serif;color-scheme:dark;--bg:#08121d;--panel:#122638;--line:#35536a;--text:#eaf5fa;--muted:#b4c9d2;--accent:#78e1ca}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}
+    header,main,footer{max-width:1200px;margin:auto;padding:1.4rem clamp(1rem,4vw,3rem)}
+    header{display:flex;justify-content:space-between;gap:1rem;align-items:center;border-bottom:1px solid var(--line)}
+    h1{font-size:1.6rem;margin:0}h2{font-size:1.1rem;margin:.1rem 0 1rem}p{line-height:1.5}
+    .muted,small{color:var(--muted)}.badge{border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:.4rem .8rem;font-size:.8rem}
+    .notice{background:#173743;border-left:4px solid var(--accent);padding:1rem;margin:0 0 1.5rem}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:.6rem;padding:1rem;margin-bottom:1rem}
+    .metric{font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums}.label{font-size:.8rem;color:var(--muted)}
+    .toolbar{display:flex;flex-wrap:wrap;gap:1rem;align-items:end}label{display:grid;gap:.35rem;color:var(--muted);font-size:.85rem}
+    select,button{font:inherit;color:var(--text);background:#173348;border:1px solid #63859a;border-radius:.35rem;padding:.55rem .7rem}
+    button{cursor:pointer}button:focus-visible,select:focus-visible,tr:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+    .scroll{overflow:auto;max-height:410px}table{border-collapse:collapse;width:100%;min-width:650px}th,td{padding:.65rem;text-align:left;border-bottom:1px solid var(--line);font-size:.85rem}th{position:sticky;top:0;background:var(--panel)}tbody tr{cursor:pointer}tbody tr:hover,tbody tr:focus-visible{background:#224159}
+    .INVESTIGATE{color:#ffbb9f}.NORMAL{color:#8be8c4}.ABSTAIN{color:#e4d9a3}
+    svg{width:100%;height:220px;background:#091b2b;border:1px solid var(--line);border-radius:.3rem}a{color:#8ee8d4}
+    #error{color:#ffb7a6;min-height:1.2rem}footer{border-top:1px solid var(--line);font-size:.82rem;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header><div><h1>ORBIT-R</h1><small>ShockBridge Pulse Research Lab · telemetry research</small></div><span class="badge">Historical replay</span></header>
+  <main>
+    <div class="notice"><strong>Research reference, not a live spacecraft feed.</strong> The source contains curated telemetry excerpts. Assessments are baseline signals, not fault diagnoses or operational alert rates.</div>
+    <div id="error" role="alert"></div>
+    <div class="grid" aria-label="Replay summary">
+      <section class="panel"><div class="label">Segments processed</div><div class="metric" id="processed">—</div><small id="progress">Waiting for source</small></section>
+      <section class="panel"><div class="label">Channels observed</div><div class="metric" id="channels">—</div></section>
+      <section class="panel"><div class="label">Investigate</div><div class="metric" id="investigate">—</div></section>
+      <section class="panel"><div class="label">Abstain</div><div class="metric" id="abstain">—</div></section>
+    </div>
+    <section class="panel">
+      <h2>Measured telemetry excerpts</h2>
+      <div class="toolbar"><label>Channel<select id="channel"><option value="">All channels</option></select></label><button id="refresh" type="button">Refresh</button><small id="count" role="status"></small></div>
+      <div class="scroll"><table><thead><tr><th scope="col">UTC event time</th><th scope="col">Channel</th><th scope="col">Source segment</th><th scope="col">Assessment</th><th scope="col">Score</th></tr></thead><tbody id="rows"><tr><td colspan="5">Loading…</td></tr></tbody></table></div>
+    </section>
+    <section class="panel"><h2>Selected waveform</h2><p class="muted" id="selection">Select a row to inspect its measured trace.</p><svg id="plot" viewBox="0 0 900 220" role="img" aria-label="Selected telemetry waveform"></svg></section>
+    <section class="panel"><h2>Source provenance</h2><p><a href="https://doi.org/10.5281/zenodo.12588359">OPS-SAT-AD v1 · original source</a></p><small id="hash">Source SHA-256 unavailable</small></section>
+  </main>
+  <footer>Read-only historical research tool · No automated spacecraft commands · No flight qualification</footer>
+  <script>
+    const el=id=>document.getElementById(id);
+    const clean=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    let current=[];
+    function plot(trace){
+      const svg=el("plot");svg.replaceChildren();if(!trace?.length)return;
+      const values=trace.map(p=>Number(p.v)).filter(Number.isFinite);if(!values.length)return;
+      const lo=Math.min(...values),span=Math.max(1e-9,Math.max(...values)-lo);
+      const points=trace.map((p,i)=>`${10+i*880/Math.max(1,trace.length-1)},${200-180*(Number(p.v)-lo)/span}`).join(" ");
+      const line=document.createElementNS("http://www.w3.org/2000/svg","polyline");
+      line.setAttribute("points",points);line.setAttribute("fill","none");line.setAttribute("stroke","#78e1ca");line.setAttribute("stroke-width","2");svg.append(line);
+    }
+    function select(index){const item=current[index];if(!item)return;el("selection").textContent=`${item.channel} · ${item.samples} measured samples · ${item.explanation}`;plot(item.trace)}
+    async function refresh(){
+      try{
+        const channel=el("channel").value;
+        const [status,events]=await Promise.all([fetch("/api/status").then(r=>{if(!r.ok)throw Error("Status unavailable");return r.json()}),fetch(`/api/events?channel=${encodeURIComponent(channel)}&limit=100`).then(r=>{if(!r.ok)throw Error("Events unavailable");return r.json()})]);
+        el("processed").textContent=`${status.processed} / ${status.total}`;
+        el("progress").textContent=status.complete?"Replay complete":status.sha256?"Replay in progress":"Source not loaded";
+        el("channels").textContent=status.stats?.channels??0;
+        el("investigate").textContent=status.stats?.assessments?.INVESTIGATE??0;
+        el("abstain").textContent=status.stats?.assessments?.ABSTAIN??0;
+        el("hash").textContent=`Source SHA-256: ${status.sha256||"unavailable"}`;
+        el("error").textContent=status.error||"";
+        current=events.items||[];el("count").textContent=`Showing ${current.length} most recent segments`;
+        el("rows").innerHTML=current.length?current.map((x,i)=>`<tr tabindex="0" data-i="${i}"><td>${clean(x.ts)}</td><td>${clean(x.channel)}</td><td>${clean(x.source_key)}</td><td class="${clean(x.status)}">${clean(x.status)}</td><td>${clean(x.score)}</td></tr>`).join(""):'<tr><td colspan="5">No segments available for this channel.</td></tr>';
+        el("rows").querySelectorAll("tr[data-i]").forEach(row=>{row.onclick=()=>select(Number(row.dataset.i));row.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();select(Number(row.dataset.i))}}});
+        const options=el("channel"),known=new Set([...options.options].map(o=>o.value));
+        (await fetch("/api/channels").then(r=>r.json())).channels.forEach(name=>{if(!known.has(name)){const option=new Option(name,name);options.add(option)}});
+      }catch(error){el("error").textContent=`Dashboard update failed: ${error.message}`}
+    }
+    el("refresh").onclick=refresh;el("channel").onchange=refresh;refresh();setInterval(refresh,5000);
+  </script>
+</body>
+</html>
