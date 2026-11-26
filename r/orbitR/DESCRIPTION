@@ -1,7 +1,7 @@
 Package: orbitR
 Title: Public Reference Utilities for Real Spacecraft Telemetry
 Version: 0.1.0
-Authors@R: person(given = "ShockBridge Pulse", family = "Research Lab", email = "research@example.invalid", role = c("aut", "cre"))
+Authors@R: person(given = "ORBIT-R", family = "Contributors", email = "research@example.invalid", role = c("aut", "cre"))
 Description: Transparent reference functions to audit and summarize original OPS-SAT spacecraft telemetry without claiming mathematical novelty.
 License: file LICENSE
 Encoding: UTF-8

@@ -1,6 +1,6 @@
 # ORBIT-R — Predictive Satellite Health & Mission Assurance
 
-Independent research by ShockBridge Pulse Research Lab. **Public evidence and operational-monitoring reference code only.** Genuine OPS-SAT source: [Zenodo v1](https://doi.org/10.5281/zenodo.12588359). Never represent historical replay as a live spacecraft feed.
+Independent research. **Public evidence and operational-monitoring reference code only.** Genuine OPS-SAT source: [Zenodo v1](https://doi.org/10.5281/zenodo.12588359). Never represent historical replay as a live spacecraft feed.
 
 **Project objective:** detect emerging spacecraft health deviations early while reducing false-alarm burden and reporting when evidence is insufficient. Public implementation provides source provenance, time-ordered historical replay, an explicitly non-novel baseline, monitoring dashboard and tests.
 
