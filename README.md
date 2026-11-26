@@ -1,8 +1,8 @@
-# ORBIT-R — Spacecraft Telemetry Research Reference
+# ORBIT-R — Predictive Satellite Health & Mission Assurance
 
-Public reference code for historical spacecraft telemetry replay. Genuine OPS-SAT source: [Zenodo v1](https://doi.org/10.5281/zenodo.12588359). Never represent historical replay as a live spacecraft feed.
+Independent research by ShockBridge Pulse Research Lab. **Public evidence and operational-monitoring reference code only.** Genuine OPS-SAT source: [Zenodo v1](https://doi.org/10.5281/zenodo.12588359). Never represent historical replay as a live spacecraft feed.
 
-The public implementation provides source provenance, time-ordered historical replay, a reference baseline, monitoring dashboard and tests.
+**Project objective:** detect emerging spacecraft health deviations early while reducing false-alarm burden and reporting when evidence is insufficient. Public implementation provides source provenance, time-ordered historical replay, an explicitly non-novel baseline, monitoring dashboard and tests.
 
 **Start:** `pip install -e '.[server,dev]'`; `python -m orbitr.cli fetch-data`; `python -m orbitr.cli audit-data`; `uvicorn orbitr.app:app --port 8080`. Or `docker compose up --build -d` after the raw file is verified and placed in `data/raw/segments.csv`.
 
