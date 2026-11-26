@@ -1,0 +1,7 @@
+cff-version: 1.2.0
+message: "Cite a future approved software release and separately cite original spacecraft telemetry."
+title: "ORBIT-R public telemetry research infrastructure"
+authors:
+  - name: "ShockBridge Pulse Research Lab"
+version: 0.1.0
+repository-code: "https://github.com/rolffcoelho-bravo/ORBIT-R"
