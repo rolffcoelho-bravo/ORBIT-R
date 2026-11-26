@@ -1,13 +1,20 @@
 #' Read original OPS-SAT measured segments
 #'
 #' @param path File path to original `segments.csv` from Zenodo record 12588359.
+#' @param check Verify the pinned publisher MD5 before reading (default TRUE).
 #' @return A data.frame of original measured samples.
 #' @export
-read_opssat_segments <- function(path) {
+read_opssat_segments <- function(path, check = TRUE) {
   if (!file.exists(path)) stop("Raw OPS-SAT measurements not available")
+  if (check) {
+    actual <- unname(tools::md5sum(path))
+    if (is.na(actual) || tolower(actual) != "1f4b6ffd0359efac96a6698ff557e0f9")
+      stop("Pinned source checksum mismatch")
+  }
   x <- utils::read.csv(path, stringsAsFactors = FALSE)
   required <- c("timestamp", "channel", "value", "label", "segment", "sampling", "train")
   if (!all(required %in% names(x))) stop("Wrong original telemetry schema")
+  if (!is.numeric(x$value) || any(!is.finite(x$value))) stop("Nonfinite or invalid source observation")
   x
 }
 #' Summarize original measurements from one segment

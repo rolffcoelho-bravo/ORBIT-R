@@ -24,7 +24,7 @@ def main(argv=None):
     p.add_argument("--db",default="data/state/orbitr.sqlite3")
     a=p.parse_args(argv)
     if a.command=="fetch-data":print(download(a.data));return
-    samples=load(a.data)
+    samples=load(a.data,check=True)
     if a.command=="audit-data":
         print(json.dumps({"sha256":digest(a.data),"segments":len(samples),"channels":len({s.channel for s in samples}),"train":sum(s.train for s in samples),"test":sum(not s.train for s in samples)},indent=2));return
     from .app import State  # optional web dependency only needed by replay command

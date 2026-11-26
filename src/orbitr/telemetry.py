@@ -23,7 +23,7 @@ def is_train(x):
 
 def parse_time(x):
     t=datetime.fromisoformat(x.replace("Z","+00:00"))
-    if t.tzinfo is None:t=t.replace(tzinfo=timezone.utc)
+    if t.tzinfo is None or t.utcoffset() is None:raise ValueError("Source timestamp lacks a timezone")
     return t.astimezone(timezone.utc)
 
 @dataclass(frozen=True)
@@ -51,17 +51,19 @@ def load(path,check=False):
         for row in reader:
             key=(row["channel"],row["segment"])
             value=float(row["value"])
-            if not math.isfinite(value):continue
+            if not math.isfinite(value):raise ValueError("Nonfinite source observation")
             train=is_train(row["train"])
             t=parse_time(row["timestamp"])
             if key not in g:g[key]=[[],[],str(row["label"]),train,str(row["sampling"])]
             item=g[key]
-            if item[2]!=str(row["label"]) or item[3]!=train:raise ValueError("Inconsistent split/annotation")
+            if item[2]!=str(row["label"]) or item[3]!=train or item[4]!=str(row["sampling"]):
+                raise ValueError("Inconsistent split/annotation/sampling")
             item[0].append(t);item[1].append(value)
     out=[]
     for (channel,sid),(times,values,label,train,sampling) in g.items():
         if len(values)<3:continue
-        pairs=sorted(zip(times,values))
+        # Python's stable sort retains source order for simultaneous readings.
+        pairs=sorted(zip(times,values),key=lambda pair:pair[0])
         out.append(Segment(channel,sid,tuple(t for t,v in pairs),tuple(v for t,v in pairs),label,train,sampling))
     if not out:raise ValueError("No valid source observations")
     return sorted(out,key=lambda s:(s.start,s.channel,s.segment))

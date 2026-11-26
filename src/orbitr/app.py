@@ -1,6 +1,6 @@
 """Read-only historical real-data spacecraft telemetry replay/API. NOT A LIVE DOWNLINK."""
 import json,os,sqlite3,threading,time
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager,contextmanager
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
@@ -15,17 +15,23 @@ class State:
             id INTEGER PRIMARY KEY, source_key TEXT UNIQUE, channel TEXT, ts TEXT,
             label TEXT, train INTEGER, status TEXT, score REAL, threshold REAL,
             explanation TEXT, samples INTEGER, trace TEXT)""")
+    @contextmanager
     def db(self):
-        db=sqlite3.connect(self.path,timeout=10);db.row_factory=sqlite3.Row;return db
+        db=sqlite3.connect(self.path,timeout=10);db.row_factory=sqlite3.Row
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
     def clear(self):
         with self.db() as db:db.execute("DELETE FROM events")
     def write(self,s,result):
         step=max(1,len(s.values)//110)
         trace=[{"ts":t.isoformat(),"v":v} for t,v in zip(s.times[::step],s.values[::step])]
         with self.db() as db:
-            db.execute("""INSERT OR IGNORE INTO events(source_key,channel,ts,label,train,status,score,threshold,explanation,samples,trace)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?)""",(s.channel+":"+s.segment,s.channel,s.start.isoformat(),
-            s.label,int(s.train),result.status,result.score,result.threshold,result.explanation,len(s.values),json.dumps(trace)))
+            db.execute("""INSERT OR IGNORE INTO events(source_key,channel,ts,status,score,threshold,explanation,samples,trace)
+            VALUES(?,?,?,?,?,?,?,?,?)""",(s.channel+":"+s.segment,s.channel,s.start.isoformat(),
+            result.status,result.score,result.threshold,result.explanation,len(s.values),json.dumps(trace)))
     def events(self,channel="",limit=100):
         with self.db() as db:
             if channel:r=db.execute("SELECT * FROM events WHERE channel=? ORDER BY id DESC LIMIT ?",(channel,min(500,max(1,limit)))).fetchall()
@@ -39,25 +45,33 @@ class State:
             channels=db.execute("SELECT count(DISTINCT channel) FROM events").fetchone()[0]
             statuses={a:b for a,b in db.execute("SELECT status,count(*) FROM events GROUP BY status").fetchall()}
         return {"segments":n,"channels":channels,"assessments":statuses}
+    def channels(self):
+        with self.db() as db:
+            return [row[0] for row in db.execute("SELECT DISTINCT channel FROM events ORDER BY channel")]
 
 store=None;worker=None;error=None;sourcehash=None;segments_count=0;counter=0;finished=False
 
 def run_replay(samples,pace):
-    global counter,finished
-    model=Baseline().fit(samples);store.clear()
-    for s in samples:
-        store.write(s,model.assess(s));counter+=1
-        if pace>0:time.sleep(pace)
-    finished=True
+    global counter,finished,error
+    try:
+        model=Baseline().fit(samples);store.clear()
+        for s in samples:
+            store.write(s,model.assess(s));counter+=1
+            if pace>0:time.sleep(pace)
+        finished=True
+    except Exception as exc:
+        error=f"Replay failed: {type(exc).__name__}: {exc}"
 
 @asynccontextmanager
 async def lifespan(app):
     global store,worker,error,sourcehash,segments_count,counter,finished
     store=State(os.getenv("ORBITR_DB","data/state/orbitr.sqlite3"))
+    store.clear()
+    worker=None;error=None;sourcehash=None;segments_count=0;counter=0;finished=False
     path=os.getenv("ORBITR_DATA","data/raw/segments.csv")
     if Path(path).is_file():
         try:
-            samples=load(path);sourcehash=digest(path);segments_count=len(samples)
+            samples=load(path,check=True);sourcehash=digest(path);segments_count=len(samples)
             counter=0;finished=False
             worker=threading.Thread(target=run_replay,args=(samples,float(os.getenv("ORBITR_PACE","0.5"))),daemon=True)
             worker.start()
@@ -77,7 +91,7 @@ def status():return {"name":"ORBIT-R","mode":"HISTORICAL REAL-DATA REPLAY — NO
 def events(channel:str="",limit:int=100):return {"items":store.events(channel,limit) if store else []}
 
 @app.get("/api/channels")
-def channels():return {"channels":sorted({e["channel"] for e in store.events("",500)}) if store else []}
+def channels():return {"channels":store.channels() if store else []}
 
 @app.get("/",response_class=HTMLResponse)
 def home():return (Path(__file__).parent/"web.html").read_text(encoding="utf-8")

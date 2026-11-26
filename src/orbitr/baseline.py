@@ -26,6 +26,7 @@ class Finding:
 class Baseline:
     def __init__(self):self.profiles={}
     def fit(self,segments):
+        self.profiles={}
         groups={}
         for s in segments:
             if s.train:groups.setdefault(s.channel,[]).append(s)

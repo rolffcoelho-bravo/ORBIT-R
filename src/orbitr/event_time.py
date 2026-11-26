@@ -14,7 +14,12 @@ def utc(value: datetime) -> datetime:
 
 
 def source_ok(uri: str, sha256: str) -> None:
-    if urlparse(uri).scheme not in {"https", "file"}:
+    parsed = urlparse(uri)
+    if parsed.scheme == "https" and not parsed.netloc:
+        raise ValueError("HTTPS source URI requires a host")
+    if parsed.scheme == "file" and not parsed.path:
+        raise ValueError("file source URI requires a path")
+    if parsed.scheme not in {"https", "file"}:
         raise ValueError("source URI must be an HTTPS or file URI")
     if len(sha256) != 64 or any(c not in "0123456789abcdef" for c in sha256.lower()):
         raise ValueError("source SHA-256 must be a 64-digit hexadecimal digest")

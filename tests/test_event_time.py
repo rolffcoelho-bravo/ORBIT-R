@@ -37,3 +37,5 @@ def test_naive_time_and_invalid_source_are_rejected():
         reading(datetime(2020, 1, 1))
     with pytest.raises(ValueError, match="SHA-256"):
         Reading("M", "C", T, T, 1.0, "ok", URI, "bad")
+    with pytest.raises(ValueError, match="host"):
+        Reading("M", "C", T, T, 1.0, "ok", "https:missing-host", HASH)
