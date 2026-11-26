@@ -10,3 +10,15 @@ data/state/
 *.sqlite3
 *.pem
 *.key
+START_HERE.md
+CODEX_MASTER_PROMPT.md
+PROJECT_STATE.md
+NEXT_GATE_TASK.md
+PROJECT_BLUEPRINT.md
+EXECUTION_GATES.md
+MANIFEST_SHA256.txt
+*HANDOFF*.zip
+*BLUEPRINT*.md
+*STRATEGY*.md
+private/
+_local-private/
