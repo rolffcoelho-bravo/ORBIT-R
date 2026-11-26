@@ -3,7 +3,6 @@ import argparse, json, os, shutil, tempfile, urllib.request
 from pathlib import Path
 from .telemetry import URL,MD5,digest,load
 from .baseline import Baseline
-from .app import State
 
 def download(path):
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
@@ -28,6 +27,7 @@ def main(argv=None):
     samples=load(a.data)
     if a.command=="audit-data":
         print(json.dumps({"sha256":digest(a.data),"segments":len(samples),"channels":len({s.channel for s in samples}),"train":sum(s.train for s in samples),"test":sum(not s.train for s in samples)},indent=2));return
+    from .app import State  # optional web dependency only needed by replay command
     state=State(a.db);model=Baseline().fit(samples);state.clear()
     for s in samples:state.write(s,model.assess(s))
     print(json.dumps({"mode":"historical real-data replay","processed":len(samples),"db":a.db,"sha256":digest(a.data)},indent=2))
